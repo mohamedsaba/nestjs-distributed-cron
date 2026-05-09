@@ -3,6 +3,7 @@ module.exports = {
   testEnvironment: 'node',
   rootDir: '.',
   testMatch: ['<rootDir>/test/**/*.spec.ts'],
+  setupFiles: ['reflect-metadata'],
   // globalSetup: '<rootDir>/test/helpers/global-setup.ts',
   // globalTeardown: '<rootDir>/test/helpers/global-teardown.ts',
   collectCoverageFrom: [
