@@ -1,6 +1,6 @@
 {
   "name": "@mohamedsaba/nestjs-distributed-cron",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Distributed singleton cron scheduler with Redis-backed leader election for NestJS",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -85,7 +85,11 @@
       [
         "@semantic-release/git",
         {
-          "assets": ["package.json", "package-lock.json", "CHANGELOG.md"],
+          "assets": [
+            "package.json",
+            "package-lock.json",
+            "CHANGELOG.md"
+          ],
           "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
         }
       ]
