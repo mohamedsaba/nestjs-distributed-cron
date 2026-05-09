@@ -1,10 +1,7 @@
 import { DynamicModule, Module, Global, Provider } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import {
-  DISTRIBUTED_CRON_MODULE_OPTIONS,
-  REDIS_CLIENT,
-} from './constants/metadata.constants';
+import { DISTRIBUTED_CRON_MODULE_OPTIONS } from './constants/metadata.constants';
 import { DistributedCronModuleOptions } from './interfaces/distributed-cron-options.interface';
 import { RedisClientProvider } from './services/redis-client.provider';
 import { LeaderElector } from './services/leader-elector.service';
@@ -33,7 +30,9 @@ export class DistributedCronModule {
 
   static forRootAsync(options: {
     imports?: any[];
-    useFactory: (...args: any[]) => Promise<DistributedCronModuleOptions> | DistributedCronModuleOptions;
+    useFactory: (
+      ...args: any[]
+    ) => Promise<DistributedCronModuleOptions> | DistributedCronModuleOptions;
     inject?: any[];
   }): DynamicModule {
     const optionsProvider: Provider = {
@@ -45,12 +44,7 @@ export class DistributedCronModule {
     return {
       module: DistributedCronModule,
       imports: options.imports || [],
-      providers: [
-        optionsProvider,
-        RedisClientProvider,
-        LeaderElector,
-        CronSchedulerService,
-      ],
+      providers: [optionsProvider, RedisClientProvider, LeaderElector, CronSchedulerService],
       exports: [LeaderElector],
     };
   }

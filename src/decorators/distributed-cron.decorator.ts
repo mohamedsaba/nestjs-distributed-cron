@@ -22,9 +22,14 @@ export function DistributedCron(
  * Parameter decorator that injects an AbortSignal that is aborted when leadership is lost.
  */
 export function DistributedCronAbort(): ParameterDecorator {
-  return (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number) => {
+  return (target: any, propertyKey: string | symbol | undefined, parameterIndex: number) => {
     if (propertyKey) {
-      (Reflect as any).defineMetadata(DISTRIBUTED_CRON_ABORT_KEY, parameterIndex, target, propertyKey);
+      (Reflect as any).defineMetadata(
+        DISTRIBUTED_CRON_ABORT_KEY,
+        parameterIndex,
+        target,
+        propertyKey,
+      );
     }
   };
 }

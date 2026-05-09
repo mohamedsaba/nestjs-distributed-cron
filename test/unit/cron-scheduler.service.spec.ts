@@ -54,13 +54,21 @@ describe('CronSchedulerService', () => {
 
   it('should scan and register jobs on init', () => {
     const testInstance = {
-      testMethod: () => { },
+      testMethod: () => {
+        // Mock method
+      },
     };
     discoveryService.getProviders.mockReturnValue([{ instance: testInstance }]);
-    metadataScanner.scanFromPrototype.mockImplementation((instance: any, proto: any, callback: (name: string) => void) => {
-      callback('testMethod');
-    });
-    (Reflect as any).defineMetadata(DISTRIBUTED_CRON_KEY, { cronExpression: '* * * * *' }, testInstance.testMethod);
+    metadataScanner.scanFromPrototype.mockImplementation(
+      (instance: any, proto: any, callback: (name: string) => void) => {
+        callback('testMethod');
+      },
+    );
+    (Reflect as any).defineMetadata(
+      DISTRIBUTED_CRON_KEY,
+      { cronExpression: '* * * * *' },
+      testInstance.testMethod,
+    );
 
     service.onModuleInit();
 

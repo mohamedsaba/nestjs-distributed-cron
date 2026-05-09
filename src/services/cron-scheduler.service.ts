@@ -1,10 +1,5 @@
 import 'reflect-metadata';
-import {
-  Injectable,
-  OnModuleInit,
-  Logger,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, Inject } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, ModuleRef } from '@nestjs/core';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
@@ -51,12 +46,13 @@ export class CronSchedulerService implements OnModuleInit {
         instance,
         Object.getPrototypeOf(instance),
         (methodName) => {
-          const metadata: DistributedCronOptions & { cronExpression: string } =
-            (Reflect as any).getMetadata(DISTRIBUTED_CRON_KEY, instance[methodName]);
+          const metadata: DistributedCronOptions & { cronExpression: string } = (
+            Reflect as any
+          ).getMetadata(DISTRIBUTED_CRON_KEY, instance[methodName]);
 
           if (metadata) {
             const jobName = metadata.name || `${instance.constructor.name}.${methodName}`;
-            
+
             if (jobNames.has(jobName)) {
               throw new Error(`Duplicate distributed cron job name detected: ${jobName}`);
             }
@@ -98,11 +94,13 @@ export class CronSchedulerService implements OnModuleInit {
 
       try {
         if (!isLeader && !leaderOnly) {
-          this.logger.debug(`Instance is not leader for job "${jobName}" but leaderOnly is false, executing...`);
+          this.logger.debug(
+            `Instance is not leader for job "${jobName}" but leaderOnly is false, executing...`,
+          );
         } else {
           this.logger.debug(`Instance is leader for job "${jobName}", executing...`);
         }
-        await instance[methodName].apply(instance, args);
+        await instance[methodName](...args);
       } catch (error) {
         this.logger.error(`Error executing distributed cron job "${jobName}":`, error);
       } finally {
@@ -115,6 +113,8 @@ export class CronSchedulerService implements OnModuleInit {
     this.schedulerRegistry.addCronJob(jobName, cronJob);
     cronJob.start();
 
-    this.logger.log(`Registered distributed cron job "${jobName}" with expression "${cronExpression}"`);
+    this.logger.log(
+      `Registered distributed cron job "${jobName}" with expression "${cronExpression}"`,
+    );
   }
 }

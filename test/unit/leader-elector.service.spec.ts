@@ -4,7 +4,6 @@ import {
   DISTRIBUTED_CRON_MODULE_OPTIONS,
   REDIS_CLIENT,
 } from '../../src/constants/metadata.constants';
-import * as fs from 'fs';
 
 describe('LeaderElector', () => {
   let service: LeaderElector;
@@ -12,6 +11,7 @@ describe('LeaderElector', () => {
 
   beforeEach(async () => {
     redisMock = {
+      ping: jest.fn().mockResolvedValue('PONG'),
       defineCommand: jest.fn(),
       set: jest.fn(),
       get: jest.fn(),
@@ -38,7 +38,7 @@ describe('LeaderElector', () => {
     }).compile();
 
     service = module.get<LeaderElector>(LeaderElector);
-    service.onModuleInit();
+    await service.onModuleInit();
   });
 
   it('should be defined', () => {

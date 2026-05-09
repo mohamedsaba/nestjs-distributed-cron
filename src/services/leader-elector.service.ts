@@ -2,10 +2,7 @@ import 'reflect-metadata';
 import { Inject, Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
-import {
-  DISTRIBUTED_CRON_MODULE_OPTIONS,
-  REDIS_CLIENT,
-} from '../constants/metadata.constants';
+import { DISTRIBUTED_CRON_MODULE_OPTIONS, REDIS_CLIENT } from '../constants/metadata.constants';
 import { DistributedCronModuleOptions } from '../interfaces/distributed-cron-options.interface';
 import { RENEW_LUA, RELEASE_LUA } from '../lua/scripts';
 
@@ -58,15 +55,15 @@ export class LeaderElector implements OnModuleInit {
   async renewLock(jobName: string, ttlMs?: number): Promise<boolean> {
     const key = this.getLockKey(jobName);
     const ttl = ttlMs || this.leaseDuration;
-    // @ts-ignore - custom command
-    const result = await this.redis.renewLock(key, this.instanceId, ttl);
+    // Custom commands defined in onModuleInit
+    const result = await (this.redis as any).renewLock(key, this.instanceId, ttl);
     return result === 1;
   }
 
   async releaseLock(jobName: string): Promise<void> {
     const key = this.getLockKey(jobName);
-    // @ts-ignore - custom command
-    await this.redis.releaseLockScript(key, this.instanceId);
+    // Custom commands defined in onModuleInit
+    await (this.redis as any).releaseLockScript(key, this.instanceId);
   }
 
   async amILeader(jobName: string): Promise<boolean> {
