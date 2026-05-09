@@ -63,7 +63,14 @@
     "rimraf": "^5.0.0",
     "testcontainers": "^11.14.0",
     "ts-jest": "^29.1.0",
-    "typescript": "^5.1.0"
+    "typescript": "^5.1.0",
+    "semantic-release": "^24.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/release-notes-generator": "^14.0.0",
+    "@semantic-release/changelog": "^6.0.0",
+    "@semantic-release/npm": "^12.0.0",
+    "@semantic-release/github": "^11.0.0",
+    "@semantic-release/git": "^10.0.0"
   },
   "release": {
     "branches": [
@@ -74,7 +81,14 @@
       "@semantic-release/release-notes-generator",
       "@semantic-release/changelog",
       "@semantic-release/npm",
-      "@semantic-release/github"
+      "@semantic-release/github",
+      [
+        "@semantic-release/git",
+        {
+          "assets": ["package.json", "package-lock.json", "CHANGELOG.md"],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+        }
+      ]
     ]
   },
   "publishConfig": {
