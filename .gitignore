@@ -7,3 +7,8 @@ yarn-error.log*
 .env
 .DS_Store
 *.tsbuildinfo
+
+# Ignore all markdown files except README
+*.md
+*.MD
+!README.md
