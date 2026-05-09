@@ -67,7 +67,7 @@ describe('Multi-instance Integration', () => {
         providers: [TestJobService],
       }).compile();
 
-      const app = module.createNestApplication();
+      const app = module.createNestMicroservice({});
       await app.init();
       return { app, service: module.get<TestJobService>(TestJobService) };
     };
