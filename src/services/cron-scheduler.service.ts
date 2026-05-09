@@ -71,7 +71,7 @@ export class CronSchedulerService implements OnModuleInit {
     jobName: string,
     metadata: DistributedCronOptions & { cronExpression: string },
   ) {
-    const { cronExpression, ttl, leaderOnly = true } = metadata;
+    const { cronExpression, leaderOnly = true } = metadata;
     const abortParamIndex: number | undefined = (Reflect as any).getMetadata(
       DISTRIBUTED_CRON_ABORT_KEY,
       instance,

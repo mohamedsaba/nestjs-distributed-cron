@@ -60,7 +60,9 @@ export class DistributedCronModule {
   }
 
   private static createAsyncOptionsProvider(options: {
-    useFactory?: (...args: any[]) => Promise<DistributedCronModuleOptions> | DistributedCronModuleOptions;
+    useFactory?: (
+      ...args: any[]
+    ) => Promise<DistributedCronModuleOptions> | DistributedCronModuleOptions;
     useClass?: any;
     useExisting?: any;
     inject?: any[];
@@ -74,7 +76,8 @@ export class DistributedCronModule {
     }
     return {
       provide: DISTRIBUTED_CRON_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: any) => await optionsFactory.createDistributedCronOptions(),
+      useFactory: async (optionsFactory: any) =>
+        await optionsFactory.createDistributedCronOptions(),
       inject: [options.useClass || options.useExisting],
     };
   }

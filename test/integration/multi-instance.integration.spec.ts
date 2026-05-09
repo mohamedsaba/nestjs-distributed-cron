@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DistributedCronModule } from '../../src/distributed-cron.module';
-import { LeaderElector } from '../../src/services/leader-elector.service';
-import { DistributedCron, DistributedCronAbort } from '../../src/decorators/distributed-cron.decorator';
+import {
+  DistributedCron,
+  DistributedCronAbort,
+} from '../../src/decorators/distributed-cron.decorator';
 import { Injectable } from '@nestjs/common';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { Redis } from 'ioredis';
@@ -16,7 +18,7 @@ class TestJobService {
   async handleJob(@DistributedCronAbort() signal: AbortSignal, instanceId: string) {
     this.callCount++;
     this.instanceIds.push(instanceId);
-    
+
     // Simulate long work
     return new Promise((resolve) => {
       const timeout = setTimeout(resolve, 2000); // Longer than TTL
@@ -34,10 +36,8 @@ describe('Multi-instance Integration', () => {
   let redisClient: Redis;
 
   beforeAll(async () => {
-    redisContainer = await new GenericContainer('redis')
-      .withExposedPorts(6379)
-      .start();
-    
+    redisContainer = await new GenericContainer('redis').withExposedPorts(6379).start();
+
     redisClient = new Redis({
       host: redisContainer.getHost(),
       port: redisContainer.getMappedPort(6379),
@@ -81,7 +81,7 @@ describe('Multi-instance Integration', () => {
     // Verify instance 1 or 2 ran
     const totalCalls = instance1.service.callCount + instance2.service.callCount;
     expect(totalCalls).toBeGreaterThan(0);
-    
+
     // In this scenario, since jobs take 2s and TTL is 1s, they should definitely hit the abort logic
     expect(instance1.service.aborted || instance2.service.aborted).toBe(true);
 
