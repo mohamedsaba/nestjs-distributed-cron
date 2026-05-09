@@ -57,6 +57,10 @@ jobs:
     needs: [integration-tests]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write       
+      issues: write         
+      pull-requests: write 
     steps:
       - uses: actions/checkout@v4
         with:
