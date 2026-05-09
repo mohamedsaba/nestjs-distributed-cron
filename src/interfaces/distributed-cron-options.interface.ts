@@ -83,4 +83,9 @@ export interface DistributedCronOptions {
    * @default false
    */
   retryOnFailure?: boolean;
+
+  /**
+   * Callback invoked when the cron job fails.
+   */
+  onError?: (error: any) => void;
 }

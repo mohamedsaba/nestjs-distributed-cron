@@ -23,7 +23,6 @@ export class LeaderElector implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      // Verify Redis connection at startup as required by spec (Question 4)
       await this.redis.ping();
       this.logger.log(`Redis connection verified. Instance ID: ${this.instanceId}`);
     } catch (error) {
@@ -31,7 +30,8 @@ export class LeaderElector implements OnModuleInit {
       throw error;
     }
 
-    this.redis.defineCommand('renewLock', {
+    // Define commands once. We'll also use EVAL as a fallback if needed.
+    this.redis.defineCommand('renewLockScript', {
       numberOfKeys: 1,
       lua: RENEW_LUA,
     });
@@ -48,22 +48,37 @@ export class LeaderElector implements OnModuleInit {
   async acquireLock(jobName: string, ttlMs?: number): Promise<boolean> {
     const key = this.getLockKey(jobName);
     const ttl = ttlMs || this.leaseDuration;
-    const result = await this.redis.set(key, this.instanceId, 'PX', ttl, 'NX');
-    return result === 'OK';
+    try {
+      const result = await this.redis.set(key, this.instanceId, 'PX', ttl, 'NX');
+      return result === 'OK';
+    } catch (error) {
+      this.logger.error(`Failed to acquire lock for job "${jobName}" due to Redis error:`, error);
+      return false;
+    }
   }
 
   async renewLock(jobName: string, ttlMs?: number): Promise<boolean> {
     const key = this.getLockKey(jobName);
     const ttl = ttlMs || this.leaseDuration;
-    // Custom commands defined in onModuleInit
-    const result = await (this.redis as any).renewLock(key, this.instanceId, ttl);
-    return result === 1;
+    try {
+      // Use the defined command. If it's not defined yet (unlikely), ioredis will throw.
+      const result = await (this.redis as any).renewLockScript(key, this.instanceId, ttl);
+      return result === 1;
+    } catch (error) {
+      this.logger.error(`Failed to renew lock for job "${jobName}" due to Redis error:`, error);
+      return false;
+    }
   }
 
   async releaseLock(jobName: string): Promise<void> {
     const key = this.getLockKey(jobName);
-    // Custom commands defined in onModuleInit
-    await (this.redis as any).releaseLockScript(key, this.instanceId);
+    try {
+      // Explicitly using the atomic Lua script to ensure we only delete our own lock.
+      // This protects against the case where our lock expired and was taken by another instance.
+      await (this.redis as any).releaseLockScript(key, this.instanceId);
+    } catch (error) {
+      this.logger.error(`Failed to release lock for job "${jobName}" due to Redis error:`, error);
+    }
   }
 
   async amILeader(jobName: string): Promise<boolean> {

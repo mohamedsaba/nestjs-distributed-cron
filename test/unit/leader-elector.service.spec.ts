@@ -16,7 +16,7 @@ describe('LeaderElector', () => {
       set: jest.fn(),
       get: jest.fn(),
       pttl: jest.fn(),
-      renewLock: jest.fn(),
+      renewLockScript: jest.fn(),
       releaseLockScript: jest.fn(),
     };
 
@@ -46,7 +46,7 @@ describe('LeaderElector', () => {
   });
 
   it('should define commands on init', () => {
-    expect(redisMock.defineCommand).toHaveBeenCalledWith('renewLock', expect.any(Object));
+    expect(redisMock.defineCommand).toHaveBeenCalledWith('renewLockScript', expect.any(Object));
     expect(redisMock.defineCommand).toHaveBeenCalledWith('releaseLockScript', expect.any(Object));
   });
 
@@ -69,14 +69,20 @@ describe('LeaderElector', () => {
       const result = await service.acquireLock('test-job');
       expect(result).toBe(false);
     });
+
+    it('should return false on Redis error', async () => {
+      redisMock.set.mockRejectedValue(new Error('Redis down'));
+      const result = await service.acquireLock('test-job');
+      expect(result).toBe(false);
+    });
   });
 
   describe('renewLock', () => {
     it('should return true when lock is renewed', async () => {
-      redisMock.renewLock.mockResolvedValue(1);
+      redisMock.renewLockScript.mockResolvedValue(1);
       const result = await service.renewLock('test-job');
       expect(result).toBe(true);
-      expect(redisMock.renewLock).toHaveBeenCalledWith(
+      expect(redisMock.renewLockScript).toHaveBeenCalledWith(
         'distributed-cron:test-job:lock',
         'test-instance',
         1000,
@@ -84,7 +90,7 @@ describe('LeaderElector', () => {
     });
 
     it('should return false when lock is not owned by instance', async () => {
-      redisMock.renewLock.mockResolvedValue(0);
+      redisMock.renewLockScript.mockResolvedValue(0);
       const result = await service.renewLock('test-job');
       expect(result).toBe(false);
     });
@@ -111,6 +117,36 @@ describe('LeaderElector', () => {
       redisMock.get.mockResolvedValue('other-instance');
       const result = await service.amILeader('test-job');
       expect(result).toBe(false);
+    });
+  });
+
+  describe('getCurrentLeader', () => {
+    it('should return the current leader ID', async () => {
+      redisMock.get.mockResolvedValue('some-leader');
+      const result = await service.getCurrentLeader('test-job');
+      expect(result).toBe('some-leader');
+    });
+
+    it('should return null if no leader exists', async () => {
+      redisMock.get.mockResolvedValue(null);
+      const result = await service.getCurrentLeader('test-job');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getLeaseExpiration', () => {
+    it('should return expiration timestamp', async () => {
+      const now = Date.now();
+      jest.spyOn(Date, 'now').mockReturnValue(now);
+      redisMock.pttl.mockResolvedValue(500);
+      const result = await service.getLeaseExpiration('test-job');
+      expect(result).toBe(now + 500);
+    });
+
+    it('should return null if key does not exist', async () => {
+      redisMock.pttl.mockResolvedValue(-2);
+      const result = await service.getLeaseExpiration('test-job');
+      expect(result).toBeNull();
     });
   });
 });

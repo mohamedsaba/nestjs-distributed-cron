@@ -79,7 +79,18 @@ export class CronSchedulerService implements OnModuleInit {
     );
 
     const wrapper = async () => {
-      const isLeader = await this.leaderElector.acquireLock(jobName, ttl);
+      let isLeader = false;
+      const ttl = metadata.ttl || this.options.leaseDuration || 15_000;
+
+      try {
+        isLeader = await this.leaderElector.acquireLock(jobName, ttl);
+      } catch (error) {
+        this.logger.error(
+          `Critical Redis error during lock acquisition for job "${jobName}". Skipping tick to prevent split-brain.`,
+          error,
+        );
+        return;
+      }
 
       if (!isLeader && leaderOnly) {
         this.logger.debug(`Instance is not leader for job "${jobName}", skipping execution.`);
@@ -92,6 +103,16 @@ export class CronSchedulerService implements OnModuleInit {
         args[abortParamIndex] = controller.signal;
       }
 
+      // Start a timeout to abort the signal when the lock is expected to expire
+      const abortTimeout = setTimeout(() => {
+        if (!controller.signal.aborted) {
+          this.logger.warn(
+            `Job "${jobName}" exceeded its lease duration (${ttl}ms). Aborting signal...`,
+          );
+          controller.abort();
+        }
+      }, ttl);
+
       try {
         if (!isLeader && !leaderOnly) {
           this.logger.debug(
@@ -103,9 +124,20 @@ export class CronSchedulerService implements OnModuleInit {
         await instance[methodName](...args);
       } catch (error) {
         this.logger.error(`Error executing distributed cron job "${jobName}":`, error);
+        if (metadata.onError) {
+          try {
+            metadata.onError(error);
+          } catch (err) {
+            this.logger.error(`Error in onError callback for job "${jobName}":`, err);
+          }
+        }
       } finally {
-        await this.leaderElector.releaseLock(jobName);
-        this.logger.debug(`Released lock for job "${jobName}".`);
+        clearTimeout(abortTimeout);
+        // Only release the lock if we were the ones who acquired it
+        if (isLeader) {
+          await this.leaderElector.releaseLock(jobName);
+          this.logger.debug(`Released lock for job "${jobName}".`);
+        }
       }
     };
 

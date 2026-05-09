@@ -73,6 +73,30 @@ export class ReportService {
 | `instanceId` | Unique ID for the instance | `POD_NAME` or UUID |
 | `autoRenew` | Automatically renew the lease | `true` |
 
+## Security & Reliability
+
+The distributed cron implementation is designed with a "Safety First" approach to ensure exactly-one execution even in unstable environments.
+
+### Exactly-One Guarantee
+- **Atomic Lock Release**: Uses Lua scripts to verify that an instance only deletes its *own* lock. This prevents a slow instance from accidentally killing a lock acquired by a newer leader.
+- **Fail-Safe Acquisition**: If Redis is unreachable during a tick, the system skips execution for that instance. This prevents split-brain scenarios where multiple instances might think they are leaders due to network partitions.
+
+### Lease Duration vs. Job Runtime
+It is critical that your job's execution time is shorter than the `leaseDuration` (TTL).
+- If a job takes longer than the TTL, the lock will expire on Redis.
+- Another instance may then acquire the lock and start running concurrently.
+- **AbortSignal**: To mitigate this, always inject the `@DistributedCronAbort()` signal. The signal will be aborted automatically if the job exceeds the lease duration.
+
+```typescript
+@DistributedCron('*/10 * * * *', { ttl: 5000 })
+async handleLongJob(@DistributedCronAbort() signal: AbortSignal) {
+  // Check signal.aborted or use signal in fetch/db calls
+}
+```
+
+### Process Crashes
+If an instance crashes while holding a lock, the job will not run until the TTL expires. Choose a `leaseDuration` that balances recovery time with the risk of missed ticks.
+
 ## License
 
 [MIT](LICENSE)

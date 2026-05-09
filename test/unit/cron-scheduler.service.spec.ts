@@ -28,6 +28,9 @@ describe('CronSchedulerService', () => {
     leaderElector = {
       acquireLock: jest.fn(),
       releaseLock: jest.fn(),
+      amILeader: jest.fn(),
+      getCurrentLeader: jest.fn(),
+      getLeaseExpiration: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
