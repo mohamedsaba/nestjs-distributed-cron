@@ -34,9 +34,11 @@ export class CronSchedulerService implements OnModuleInit {
 
   private scanAndRegisterJobs() {
     const providers = this.discoveryService.getProviders();
+    const controllers = this.discoveryService.getControllers();
+    const allWrappers = [...providers, ...controllers];
     const jobNames = new Set<string>();
 
-    providers.forEach((wrapper) => {
+    allWrappers.forEach((wrapper) => {
       const { instance } = wrapper;
       if (!instance || !Object.getPrototypeOf(instance)) {
         return;
@@ -103,7 +105,9 @@ export class CronSchedulerService implements OnModuleInit {
         args[abortParamIndex] = controller.signal;
       }
 
-      // Start a timeout to abort the signal when the lock is expected to expire
+      // Start a timeout to abort the signal when the lock is expected to expire.
+      // We subtract a small safety buffer (100ms) to ensure we abort BEFORE another
+      // instance could potentially acquire the expired lock.
       const abortTimeout = setTimeout(() => {
         if (!controller.signal.aborted) {
           this.logger.warn(
@@ -111,7 +115,7 @@ export class CronSchedulerService implements OnModuleInit {
           );
           controller.abort();
         }
-      }, ttl);
+      }, Math.max(0, ttl - 100));
 
       try {
         if (!isLeader && !leaderOnly) {

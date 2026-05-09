@@ -19,6 +19,18 @@ export class LeaderElector implements OnModuleInit {
   ) {
     this.instanceId = options.instanceId || process.env.POD_NAME || randomUUID();
     this.leaseDuration = options.leaseDuration || 15_000;
+
+    // Define commands in constructor to ensure they are available immediately.
+    // NestJS ensures dependencies are instantiated before their dependents,
+    // so this redis client will be ready for command definition.
+    this.redis.defineCommand('renewLockScript', {
+      numberOfKeys: 1,
+      lua: RENEW_LUA,
+    });
+    this.redis.defineCommand('releaseLockScript', {
+      numberOfKeys: 1,
+      lua: RELEASE_LUA,
+    });
   }
 
   async onModuleInit() {
@@ -29,16 +41,6 @@ export class LeaderElector implements OnModuleInit {
       this.logger.error('Failed to connect to Redis at startup. This is a fatal error.');
       throw error;
     }
-
-    // Define commands once. We'll also use EVAL as a fallback if needed.
-    this.redis.defineCommand('renewLockScript', {
-      numberOfKeys: 1,
-      lua: RENEW_LUA,
-    });
-    this.redis.defineCommand('releaseLockScript', {
-      numberOfKeys: 1,
-      lua: RELEASE_LUA,
-    });
   }
 
   private getLockKey(jobName: string): string {

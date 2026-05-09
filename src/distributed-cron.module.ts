@@ -1,7 +1,8 @@
-import { DynamicModule, Module, Global, Provider } from '@nestjs/common';
+import { DynamicModule, Module, Global, Provider, OnModuleDestroy, Inject } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { DISTRIBUTED_CRON_MODULE_OPTIONS } from './constants/metadata.constants';
+import Redis from 'ioredis';
+import { DISTRIBUTED_CRON_MODULE_OPTIONS, REDIS_CLIENT } from './constants/metadata.constants';
 import { DistributedCronModuleOptions } from './interfaces/distributed-cron-options.interface';
 import { RedisClientProvider } from './services/redis-client.provider';
 import { LeaderElector } from './services/leader-elector.service';
@@ -11,7 +12,16 @@ import { CronSchedulerService } from './services/cron-scheduler.service';
 @Module({
   imports: [DiscoveryModule, ScheduleModule.forRoot()],
 })
-export class DistributedCronModule {
+export class DistributedCronModule implements OnModuleDestroy {
+  constructor(@Inject(REDIS_CLIENT) private readonly redis: Redis) {}
+
+  async onModuleDestroy() {
+    // Gracefully close Redis connection on shutdown
+    if (this.redis) {
+      await this.redis.quit();
+    }
+  }
+
   static forRoot(options: DistributedCronModuleOptions): DynamicModule {
     return {
       module: DistributedCronModule,

@@ -18,6 +18,7 @@ describe('CronSchedulerService', () => {
   beforeEach(async () => {
     discoveryService = {
       getProviders: jest.fn().mockReturnValue([]),
+      getControllers: jest.fn().mockReturnValue([]),
     };
     metadataScanner = {
       scanFromPrototype: jest.fn(),

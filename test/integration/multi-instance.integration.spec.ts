@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { DistributedCronModule } from '../../src/distributed-cron.module';
 import {
   DistributedCron,
@@ -56,7 +56,7 @@ describe('Multi-instance Integration', () => {
     };
 
     const createInstance = async (id: string) => {
-      const module: TestingModule = await Test.createTestingModule({
+      const app = await Test.createTestingModule({
         imports: [
           DistributedCronModule.forRoot({
             redis: redisOptions,
@@ -67,9 +67,8 @@ describe('Multi-instance Integration', () => {
         providers: [TestJobService],
       }).compile();
 
-      const app = module.createNestMicroservice({});
       await app.init();
-      return { app, service: module.get<TestJobService>(TestJobService) };
+      return { app, service: app.get<TestJobService>(TestJobService) };
     };
 
     const instance1 = await createInstance('instance-1');
